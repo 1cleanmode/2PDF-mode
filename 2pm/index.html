@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2PDFmode — Convert anything to PDF</title>
+    <meta name="description" content="Convert images and PDFs to PDF. Rename, reorder, and download — all in your browser.">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="apple-touch-icon" href="favicon.svg">
+    <link rel="stylesheet" href="style.css">
+    <script>
+        (function() {
+            function loadScript(localSrc, cdnSrc) {
+                var s = document.createElement('script');
+                s.src = localSrc;
+                s.onerror = function() {
+                    var c = document.createElement('script');
+                    c.src = cdnSrc;
+                    document.head.appendChild(c);
+                };
+                document.head.appendChild(s);
+            }
+            loadScript('jspdf.umd.min.js',  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+            loadScript('pdf-lib.min.js',    'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js');
+            // pdf.js from CDN (used for the preview canvas)
+            var pjs = document.createElement('script');
+            pjs.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+            pjs.onload = function() {
+                if (window.pdfjsLib) {
+                    window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+                        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                }
+            };
+            document.head.appendChild(pjs);
+        })();
+    </script>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-inner">
+            <a href="#" class="nav-brand">
+                <span class="nav-mark" aria-hidden="true">
+                    <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 5h18l9 9v24a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"
+                              stroke="url(#docGrad)" stroke-width="3" stroke-linejoin="round" fill="none"/>
+                        <path d="M27 5l9 9h-9V5z"
+                              stroke="url(#docGrad)" stroke-width="3" stroke-linejoin="round" fill="none"/>
+                        <rect x="4" y="15" width="26" height="11" rx="1.5" fill="#e11d2e"/>
+                        <text x="17" y="23.6" text-anchor="middle"
+                              font-family="Arial, Helvetica, sans-serif"
+                              font-size="8.4" font-weight="800" fill="#ffffff"
+                              letter-spacing="0.2">2PDF</text>
+                        <path d="M22 29v7m0 0l-4.2-4.2M22 36l4.2-4.2"
+                              stroke="#e11d2e" stroke-width="3.4"
+                              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                        <defs>
+                            <linearGradient id="docGrad" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0" stop-color="#2563eb"/>
+                                <stop offset="1" stop-color="#0891b2"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </span>
+                <span class="nav-text">
+                    <span class="nav-logo">2PDFmode</span>
+                </span>
+            </a>
+            <div class="nav-links">
+                <a href="#tool">Convert</a>
+                <a href="#how">How It Works</a>
+                <a href="#features">Why 2PDFmode</a>
+                <a href="#faq">FAQ</a>
+            </div>
+            <div class="nav-right">
+                <div class="login-wrap">
+                    <button type="button" class="btn btn-primary btn-nav login-btn" id="loginBtn" aria-haspopup="true" aria-expanded="false">
+                        <span>Login / Sign In</span>
+                        <svg class="login-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </button>
+                    <div class="login-menu" id="loginMenu" role="menu" aria-hidden="true">
+                        <button type="button" class="login-menu-item" data-provider="Google" role="menuitem">
+                            <span>Continue with Google</span>
+                            <svg class="login-menu-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47a5.53 5.53 0 0 1-2.4 3.63v3h3.87c2.26-2.08 3.55-5.15 3.55-8.87z"/>
+                                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.87-3c-1.08.72-2.45 1.16-4.06 1.16-3.13 0-5.78-2.11-6.72-4.96H1.29v3.09A11.99 11.99 0 0 0 12 24z"/>
+                                <path fill="#FBBC05" d="M5.28 14.29a7.2 7.2 0 0 1 0-4.58V6.62H1.29a11.99 11.99 0 0 0 0 10.76l3.99-3.09z"/>
+                                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.69 1.29 6.62l3.99 3.09C6.22 6.86 8.87 4.75 12 4.75z"/>
+                            </svg>
+                        </button>
+                        <button type="button" class="login-menu-item" data-provider="Apple" role="menuitem">
+                            <span>Continue with Apple</span>
+                            <svg class="login-menu-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <path fill="currentColor" d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                            </svg>
+                        </button>
+                        <button type="button" class="login-menu-item" data-provider="X" role="menuitem">
+                            <span>Continue with X</span>
+                            <svg class="login-menu-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <path fill="currentColor" d="M18.9 2H22l-7.6 8.68L23.2 22h-6.93l-5.43-7.1L4.6 22H1.5l8.13-9.29L1.1 2h7.1l4.9 6.48L18.9 2zm-1.22 18h1.92L7.42 3.9H5.36l12.32 16.1z"/>
+                            </svg>
+                        </button>
+                        <div class="login-menu-divider" role="separator"></div>
+                        <button type="button" class="login-menu-item" data-provider="Guest" role="menuitem">
+                            <span>Continue as Guest</span>
+                            <svg class="login-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <button class="theme-switch" id="themeToggle" aria-label="Toggle theme">
+                    <span class="theme-switch-thumb">
+                        <svg class="ts-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="4"/>
+                            <line x1="12" y1="2" x2="12" y2="4"/>
+                            <line x1="12" y1="20" x2="12" y2="22"/>
+                            <line x1="4.93" y1="4.93" x2="6.34" y2="6.34"/>
+                            <line x1="17.66" y1="17.66" x2="19.07" y2="19.07"/>
+                            <line x1="2" y1="12" x2="4" y2="12"/>
+                            <line x1="20" y1="12" x2="22" y2="12"/>
+                            <line x1="4.93" y1="19.07" x2="6.34" y2="17.66"/>
+                            <line x1="17.66" y1="6.34" x2="19.07" y2="4.93"/>
+                        </svg>
+                        <svg class="ts-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        </svg>
+                    </span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-inner">
+            <div class="hero-badges">
+                <span class="hero-badge float-1">📝 DOCX &amp; DOC</span>
+                <span class="hero-badge float-2">📊 XLSX &amp; CSV</span>
+                <span class="hero-badge float-3">🖼️ JPG, PNG &amp; Photos</span>
+                <span class="hero-badge float-4">📄 TXT, MD &amp; Scans</span>
+                <span class="hero-badge hero-badge-accent float-5">100% Free</span>
+            </div>
+            <h1 class="hero-title">
+                <span class="hero-line" id="typeLine1"></span><br>
+                <span class="hero-line hero-line-2" id="typeLine2"></span><span class="type-cursor" id="typeCursor">|</span>
+            </h1>
+            <p class="hero-sub">Turn images and documents into clean, professional PDFs — right in your browser. No sign-up, no uploads to third-party servers, no watermarks.</p>
+            <div class="hero-cta">
+                <a href="#tool" class="btn btn-primary btn-lg"><span>⚡</span> Start converting</a>
+                <a href="#how" class="btn btn-ghost btn-lg">See how it works</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="tool-section" id="tool">
+        <div class="tool-inner">
+            <div class="app-window" id="appWindow">
+                <div class="app-window-bar">
+                    <div class="traffic-lights" aria-hidden="true">
+                        <span class="tl tl-red" title="Coming soon"></span>
+                        <span class="tl tl-yellow" title="Coming soon"></span>
+                        <span class="tl tl-green" title="Coming soon"></span>
+                    </div>
+                    <div class="app-window-title">Document Processing Studio</div>
+                    <div class="app-window-badges">
+                        <span class="file-count-badge" id="fileCountBadge">0 Files</span>
+                        <span class="drive-badge" title="Google Drive sync coming soon">
+                            <span class="drive-dot"></span> Google Drive Linked
+                        </span>
+                    </div>
+                </div>
+
+                <div class="app-window-body">
+                    <div class="drop-zone" id="dropZone">
+                        <input type="file" id="fileInput" multiple accept="image/*,application/pdf">
+                        <div class="drop-zone-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                        </div>
+                        <h3 class="drop-zone-title">
+                            Drag and drop your files here, or
+                            <button type="button" class="link-btn" id="browseBtn">browse files</button>
+                        </h3>
+                        <p class="drop-zone-sub">Supports <strong>JPG</strong>, <strong>PNG</strong>, <strong>WEBP</strong>, <strong>GIF</strong> (first frame), and <strong>PDF</strong>. Max 25MB per file.</p>
+                        <div class="coming-soon">
+                            <span class="cs-pill" title="Coming soon">📝 DOCX <span class="cs-lock">🔒</span></span>
+                            <span class="cs-pill" title="Coming soon">📊 XLSX <span class="cs-lock">🔒</span></span>
+                            <span class="cs-pill" title="Coming soon">🔗 DOC <span class="cs-lock">🔒</span></span>
+                        </div>
+                        <div class="security-note"><span class="check-icon">✓</span> Secure local conversion · Files never stored permanently on third-party servers</div>
+                    </div>
+
+                    <div class="active-state" id="activeState" style="display:none;">
+                        <div class="app-toolbar">
+                            <div class="toolbar-left">
+                                <button class="add-more-btn" id="addMoreBtn" type="button"><span>+</span> Add more</button>
+                                <button class="undo-btn" id="undoBtn" type="button" title="Undo (Ctrl+Z)" disabled>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg>
+                                    <span>Undo</span>
+                                </button>
+                                <button class="redo-btn" id="redoBtn" type="button" title="Redo (Ctrl+Shift+Z)" disabled>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 15-6.7L21 13"/></svg>
+                                    <span>Redo</span>
+                                </button>
+                            </div>
+                            <div class="toolbar-controls">
+                                <div class="toolbar-group">
+                                    <label>Sort</label>
+                                    <select id="sortMode">
+                                        <option value="original">Original order</option>
+                                        <option value="name">By name (A→Z)</option>
+                                        <option value="name-desc">By name (Z→A)</option>
+                                        <option value="date">By date (newest)</option>
+                                        <option value="date-asc">By date (oldest)</option>
+                                    </select>
+                                </div>
+                                <div class="toolbar-group">
+                                    <label>Thumbnails</label>
+                                    <div class="size-toggle" id="sizeToggle">
+                                        <button data-size="small" title="Small" type="button">S</button>
+                                        <button data-size="medium" class="active" title="Medium" type="button">M</button>
+                                        <button data-size="large" title="Large" type="button">L</button>
+                                    </div>
+                                </div>
+                                <button class="btn-clear-all" id="clearBtn" type="button">Clear all</button>
+                            </div>
+                        </div>
+                        <div class="preview-grid size-medium" id="previewGrid"></div>
+                        <div class="drag-hint" id="dragHint">👆 Drag to reorder · ↻ to rotate · × to remove</div>
+                        <div class="app-footer">
+                            <div class="app-footer-controls">
+                                <div class="control-group">
+                                    <label>Page Size</label>
+                                    <select id="pageSize">
+                                        <option value="native">Match image (native) ⭐</option>
+                                        <option value="a4">A4</option>
+                                        <option value="letter">Letter</option>
+                                        <option value="legal">Legal</option>
+                                    </select>
+                                </div>
+                                <div class="control-group">
+                                    <label>Orientation</label>
+                                    <select id="orientation">
+                                        <option value="portrait">Portrait</option>
+                                        <option value="landscape">Landscape</option>
+                                    </select>
+                                </div>
+                                <div class="control-group">
+                                    <label>Layout</label>
+                                    <select id="layout">
+                                        <option value="fit">Fit (whole image)</option>
+                                        <option value="fill">Fill (crop to edges)</option>
+                                    </select>
+                                </div>
+                                <div class="control-group">
+                                    <label>Margin</label>
+                                    <select id="margin">
+                                        <option value="0">None</option>
+                                        <option value="5">Small</option>
+                                        <option value="10" selected>Normal</option>
+                                        <option value="20">Large</option>
+                                    </select>
+                                </div>
+                                <div class="control-group quality-group">
+                                    <label class="quality-label">
+                                        <span>Quality</span>
+                                        <span class="quality-value" id="qualityValue">High</span>
+                                    </label>
+                                    <input type="range" id="quality" min="1" max="5" step="1" value="3">
+                                </div>
+                            </div>
+                            <div class="app-footer-actions">
+                                <div class="filename-group">
+                                    <label>Output filename</label>
+                                    <div class="filename-input-wrap">
+                                        <input type="text" id="filenameInput" placeholder="2pdfmode-document" spellcheck="false">
+                                        <span class="filename-suffix">.pdf</span>
+                                    </div>
+                                </div>
+                                <label class="auto-number-toggle" title="Renames each preview label to document-1, document-2, etc.">
+                                    <input type="checkbox" id="autoNumberToggle">
+                                    <span class="auto-number-switch"></span>
+                                    <span class="auto-number-label">Auto-number labels</span>
+                                </label>
+                                <button class="btn btn-primary" id="convertBtn"><span>⚡</span> Convert to PDF</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="how">
+        <div class="section-inner">
+            <div class="section-header">
+                <span class="section-eyebrow">Simplicity First</span>
+                <h2 class="section-title">How 2PDFmode transforms your workflow</h2>
+                <p class="section-sub">No account registration required. Zero waiting queues. Designed for immediate results.</p>
+            </div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <h3>Add any document</h3>
+                    <p>Upload photos, screenshots, or PDFs. Drag them in or click to browse — everything stays on your device.</p>
+                    <div class="step-tags"><span>Images</span><span>PDFs</span><span>Scans</span></div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <h3>Reorder &amp; rename</h3>
+                    <p>Drag tiles to reorder pages, rotate sideways shots, and name your output before you export. No messy filenames.</p>
+                    <div class="step-tags"><span>Drag to reorder</span><span>Rotate</span><span>Rename</span></div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <h3>Download</h3>
+                    <p>One click and it's saved. Sharp text, selectable content, small file size — because we merge properly, not by rasterizing.</p>
+                    <div class="step-tags"><span>True merge</span><span>Lossless option</span><span>Instant</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section section-alt" id="usecases">
+        <div class="section-inner">
+            <div class="section-header">
+                <span class="section-eyebrow">Designed For Purpose</span>
+                <h2 class="section-title">Built for students &amp; professionals</h2>
+                <p class="section-sub">Every feature solves real document headaches — no fluff, no paywalls.</p>
+            </div>
+            <div class="use-cases">
+                <div class="use-case">
+                    <div class="use-case-icon">🎓</div>
+                    <h3>For students</h3>
+                    <p class="use-case-sub">Assignments, thesis chapters, Canvas &amp; Blackboard submissions.</p>
+                    <ul class="use-case-list">
+                        <li><strong>Naming rules:</strong> rename to <code>LastName_StudentID_FinalProject.pdf</code> in seconds.</li>
+                        <li><strong>Whiteboard photos:</strong> combine snapshots of handwritten notes into one clean PDF.</li>
+                        <li><strong>Free forever:</strong> no credit card, no trials, no hidden limits.</li>
+                    </ul>
+                    <div class="use-case-price">Standard price: $0.00 forever</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-icon">💼</div>
+                    <h3>For professionals</h3>
+                    <p class="use-case-sub">Invoices, reports, client deliverables, contracts.</p>
+                    <ul class="use-case-list">
+                        <li><strong>Clean handoffs:</strong> consistent filenames and page sizes for every deliverable.</li>
+                        <li><strong>Confidentiality:</strong> processing runs client-side. No file ever hits a server.</li>
+                        <li><strong>Real PDF merge:</strong> text stays selectable, sizes stay small, quality stays sharp.</li>
+                    </ul>
+                    <div class="use-case-price">Zero data retention · No tracking</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="features">
+        <div class="section-inner">
+            <div class="section-header">
+                <span class="section-eyebrow">Technical Excellence</span>
+                <h2 class="section-title">Everything you need in a modern PDF tool</h2>
+                <p class="section-sub">No page restrictions, no subscriptions, no forced watermarks.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">✏️</div>
+                    <h3>Rename before download</h3>
+                    <p>Type the filename you want before exporting. Never waste time right-clicking renamed downloads again.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔀</div>
+                    <h3>Drag to reorder</h3>
+                    <p>Pull tiles into the exact page order you want. Live snapping, works on mouse and touch.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📄</div>
+                    <h3>True PDF merge</h3>
+                    <p>Existing PDFs are merged page-for-page. Text stays selectable, file sizes stay small.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🖼️</div>
+                    <h3>Photos &amp; scans to PDF</h3>
+                    <p>Compile receipts, handwritten notes, diagrams, and camera shots into one clean booklet.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">✨</div>
+                    <h3>Screenshot sharpness</h3>
+                    <p>Auto-detects screenshots and switches to lossless PNG — text stays razor-sharp.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>Zero tracking · Zero uploads</h3>
+                    <p>Everything runs in your browser. No watermark, no harvesting, no third-party servers.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section section-alt" id="faq">
+        <div class="section-inner">
+            <div class="section-header">
+                <span class="section-eyebrow">FAQ</span>
+                <h2 class="section-title">Questions, answered straight</h2>
+                <p class="section-sub">For students, educators, and anyone tired of clunky converters.</p>
+            </div>
+            <div class="faq">
+                <details class="faq-item">
+                    <summary>Is 2PDFmode really free?</summary>
+                    <p>Yes — 100% free, no page limits, no sign-up, no watermarks. It runs entirely in your browser.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>How does the rename feature work?</summary>
+                    <p>Before you hit Convert, type any filename you want into the "Output filename" field. Whatever you type becomes the PDF's name.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Are my files uploaded anywhere?</summary>
+                    <p>No. All processing happens in your browser using JavaScript. Your files never touch a server.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Can I combine images and PDFs into one file?</summary>
+                    <p>Yes. Drag in any mix of images and PDFs — they'll be merged in the order you arrange them.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>What's the difference between "High" and "Screenshot (PNG)" quality?</summary>
+                    <p>"High" compresses to JPEG — smaller files, great for photos. "Screenshot (PNG)" is lossless — bigger files but razor-sharp text.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>When are DOCX, XLSX, and Google Drive coming?</summary>
+                    <p>They're on the roadmap. Watch this page — when they ship, the 🔒 badges above the tool will disappear.</p>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <section class="section cta-section">
+        <div class="section-inner">
+            <div class="cta-box">
+                <h2>Ready to convert, rename, and download?</h2>
+                <p>No account. No uploads. Just a clean PDF, exactly how you want it.</p>
+                <a href="#tool" class="btn btn-primary btn-lg"><span>⚡</span> Convert a file now</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <span class="footer-mark" aria-hidden="true">
+                    <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 5h18l9 9v24a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"
+                              stroke="url(#footDocGrad)" stroke-width="3" stroke-linejoin="round" fill="none"/>
+                        <path d="M27 5l9 9h-9V5z"
+                              stroke="url(#footDocGrad)" stroke-width="3" stroke-linejoin="round" fill="none"/>
+                        <rect x="4" y="15" width="26" height="11" rx="1.5" fill="#e11d2e"/>
+                        <text x="17" y="23.6" text-anchor="middle"
+                              font-family="Arial, Helvetica, sans-serif"
+                              font-size="8.4" font-weight="800" fill="#ffffff"
+                              letter-spacing="0.2">2PDF</text>
+                        <path d="M22 29v7m0 0l-4.2-4.2M22 36l4.2-4.2"
+                              stroke="#e11d2e" stroke-width="3.4"
+                              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                        <defs>
+                            <linearGradient id="footDocGrad" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0" stop-color="#2563eb"/>
+                                <stop offset="1" stop-color="#0891b2"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </span>
+                <span class="footer-text">
+                    <span class="footer-logo">2PDFmode</span>
+                    <span class="footer-by">Eden Built · V.001</span>
+                </span>
+            </div>
+            <div class="footer-note">
+                <span>Privacy Policies</span>
+                <span>Terms &amp; Conditions Apply</span>
+                <span>2026</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- PDF Preview Modal -->
+    <div class="pdf-preview-overlay" id="pdfPreviewOverlay">
+        <div class="pdf-preview-panel">
+            <div class="pdf-preview-header">
+                <div class="pdf-preview-title">
+                    <span class="pdf-preview-icon">📄</span>
+                    <span>PDF Preview</span>
+                </div>
+                <button class="pdf-preview-close" id="pdfPreviewClose" title="Close preview">✕</button>
+            </div>
+
+            <!-- Conversion progress strip (hidden once preview renders) -->
+            <div class="pdf-preview-progress" id="pdfPreviewProgress">
+                <div class="progress-label">
+                    <span class="progress-icon">⚡</span>
+                    <span class="progress-text" id="modalProgressText">Cooking your PDF</span>
+                    <span class="progress-pct" id="modalProgressPct">0%</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" id="modalProgressFill"></div>
+                </div>
+                <div class="progress-sub" id="modalProgressSub">Preparing…</div>
+            </div>
+
+            <!-- Preview area (hidden while progress runs) -->
+            <div class="pdf-preview-body" id="pdfPreviewBody" style="display:none;">
+                <div class="pdf-preview-stage">
+                    <canvas id="pdfPreviewCanvas"></canvas>
+                </div>
+                <div class="pdf-preview-thumbs" id="pdfPreviewThumbs"></div>
+            </div>
+
+            <div class="pdf-preview-actions" id="pdfPreviewActions" style="display:none;">
+                <button class="btn btn-ghost" id="pdfPreviewCancel">Cancel</button>
+                <button class="btn btn-primary" id="pdfPreviewDownload"><span>⬇</span> Download PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="progress-overlay" id="progressOverlay" style="display:none !important;">
+        <div class="progress-panel">
+            <button class="progress-cancel" id="cancelBtn" title="Cancel conversion">✕</button>
+            <div class="progress-label">
+                <span class="progress-icon">⚡</span>
+                <span class="progress-text" id="progressText">Cooking your PDF</span>
+                <span class="progress-pct" id="progressPct">0%</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-sub" id="progressSub">Preparing…</div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+    <script src="app.js"></script>
+</body>
+</html>
